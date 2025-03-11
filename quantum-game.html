@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Quantum Explorer Adventure</title>
+  <!-- Load Phaser 3 -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #05052e, #000);
+    }
+    #game-container {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+    // Create Phaser config
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game-container',
+      width: 800,
+      height: 600,
+      backgroundColor: '#0b0b3b',
+      physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 0 } }
+      },
+      scene: { preload, create, update }
+    };
+
+    let game = new Phaser.Game(config);
+    let player, cursors;
+    const points = [];
+
+    function preload() {
+      // Assets
+      this.load.image('player', 'https://labs.phaser.io/assets/sprites/phaser-dude.png');
+      this.load.image('star', 'https://labs.phaser.io/assets/demoscene/star2.png');
+      this.load.image('particle', 'https://labs.phaser.io/assets/particles/yellow.png');
+    }
+
+    function create() {
+      // Instruction text
+      this.add.text(400, 20, '🌌 Explore Quantum World! Use Arrow Keys! 🌌', {
+        font: '22px Arial',
+        fill: '#ffffff'
+      }).setOrigin(0.5);
+
+      // Player setup
+      player = this.physics.add.sprite(400, 300, 'player').setScale(2);
+      player.setCollideWorldBounds(true);
+
+      // Enable keyboard
+      cursors = this.input.keyboard.createCursorKeys();
+
+      // Topics for stars
+      const topics = [
+        { label: 'Qubit', url: 'https://www.quorbitx.com/qubits' },
+        { label: 'Quantum Gates', url: 'https://www.quorbitx.com/blank' },
+        { label: 'Quantum Circuits', url: 'https://www.quorbitx.com/blank-4' },
+        { label: 'Wave Function', url: 'https://www.quorbitx.com/blank-1' },
+        { label: 'Bloch Sphere', url: 'https://www.quorbitx.com/blank-2' },
+        { label: 'Rabi Frequency', url: 'https://www.quorbitx.com/blank-3' },
+        { label: 'Entanglement', url: 'https://www.quorbitx.com/blank-11' },
+        { label: 'Quantum Interference', url: 'https://www.quorbitx.com/blank-12' }
+      ];
+
+      // Create twinkling stars for each topic
+      topics.forEach(topic => {
+        const x = Phaser.Math.Between(100, 700);
+        const y = Phaser.Math.Between(100, 500);
+
+        const star = this.add.image(x, y, 'star').setScale(0.5);
+        this.tweens.add({
+          targets: star,
+          scale: { from: 0.4, to: 0.6 },
+          yoyo: true,
+          repeat: -1,
+          duration: 800
+        });
+
+        star.topic = topic;
+        star.setInteractive({ useHandCursor: true });
+        star.on('pointerdown', () => {
+          window.open(topic.url, '_blank');
+        });
+
+        points.push(star);
+      });
+
+      // Particle effect behind the player
+      const particles = this.add.particles('particle');
+      const emitter = particles.createEmitter({
+        speed: 30,
+        scale: { start: 0.3, end: 0 },
+        blendMode: 'ADD'
+      });
+      emitter.startFollow(player);
+    }
+
+    function update() {
+      // Reset velocity
+      player.setVelocity(0);
+      const speed = 220;
+
+      if (cursors.left.isDown)  player.setVelocityX(-speed);
+      if (cursors.right.isDown) player.setVelocityX(speed);
+      if (cursors.up.isDown)    player.setVelocityY(-speed);
+      if (cursors.down.isDown)  player.setVelocityY(speed);
+
+      // Hover effect for stars
+      points.forEach(star => {
+        const dist = Phaser.Math.Distance.Between(player.x, player.y, star.x, star.y);
+        if (dist < 50) {
+          star.setTint(0xffcc00);
+          if (!star.labelText) {
+            star.labelText = this.add.text(star.x, star.y - 30, star.topic.label, {
+              font: '16px Arial',
+              fill: '#ffffff',
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              padding: { x: 5, y: 3 }
+            }).setOrigin(0.5);
+          }
+        } else {
+          star.clearTint();
+          if (star.labelText) {
+            star.labelText.destroy();
+            star.labelText = null;
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
